@@ -1,0 +1,21 @@
+[package]
+name = "resolve_discord_presence"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sysinfo = "0.30"
+discord-rich-presence = "0.2.3" # Using this crate for now, can be changed
+log = "0.4"
+env_logger = "0.11"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.52", features = [
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+    "Win32_Foundation",
+    "Win32_System_ProcessStatus", # For EnumProcessModules, GetModuleBaseNameW
+    "Win32_System_SystemServices", # For MAX_PATH
+]}

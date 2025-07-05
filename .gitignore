@@ -1,0 +1,16 @@
+# Rust
+/target
+Cargo.lock
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.iml
+*.DS_Store
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
