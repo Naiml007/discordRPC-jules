@@ -2,8 +2,8 @@ use sysinfo::System; // Removed ProcessExt, SystemExt, PidExt and Pid
 
 #[cfg(windows)]
 use windows_sys::Win32::{
-    Foundation::{BOOL, LPARAM, MAX_PATH, TRUE},
-    System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION},
+    Foundation::{BOOL, LPARAM, MAX_PATH, TRUE, HWND}, // Added HWND
+    // Removed OpenProcess, PROCESS_QUERY_INFORMATION from System::Threading
     UI::WindowsAndMessaging::{
         EnumWindows, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible,
     },
@@ -12,21 +12,21 @@ use windows_sys::Win32::{
 #[cfg(windows)]
 struct WindowInfo {
     pid: u32,
-    hwnd: usize,
+    hwnd: HWND, // Changed from usize to HWND
     title: String,
 }
 
 #[cfg(windows)]
-extern "system" fn enum_windows_callback(hwnd: usize, lparam: LPARAM) -> BOOL {
+extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     unsafe {
-        let windows_info = &mut *(lparam as *mut Vec<WindowInfo>);
+        let windows_info = &mut *(lparam.0 as *mut Vec<WindowInfo>); // LPARAM is a tuple struct (isize,), so use .0
         let mut pid: u32 = 0;
-        GetWindowThreadProcessId(hwnd as _, &mut pid);
+        GetWindowThreadProcessId(hwnd, &mut pid); // HWND can be passed directly
 
         if pid != 0 {
-            if IsWindowVisible(hwnd as _) == TRUE {
+            if IsWindowVisible(hwnd) == TRUE { // HWND can be passed directly
                 let mut text: [u16; MAX_PATH as usize] = [0; MAX_PATH as usize];
-                let len = GetWindowTextW(hwnd as _, text.as_mut_ptr(), MAX_PATH as i32);
+                let len = GetWindowTextW(hwnd, text.as_mut_ptr(), MAX_PATH as i32); // HWND can be passed directly
                 if len > 0 {
                     let title = String::from_utf16_lossy(&text[..len as usize]);
                     if !title.is_empty() { // Ensure title is not empty
@@ -45,7 +45,7 @@ fn get_all_windows_with_titles() -> Vec<WindowInfo> {
     unsafe {
         EnumWindows(
             Some(enum_windows_callback),
-            &mut windows_info as *mut _ as LPARAM,
+            LPARAM(&mut windows_info as *mut _ as isize), // Pass LPARAM as a tuple struct
         );
     }
     windows_info
